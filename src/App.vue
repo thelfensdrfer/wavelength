@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {computed, onUnmounted, ref} from "vue";
+import {useSound} from '@vueuse/sound';
 
 type Wave = {
     left: string;
@@ -8,6 +9,11 @@ type Wave = {
 }
 
 const seed = 12345;
+const {play, stop} = useSound('/assets/sounds/wheel.mp3', {
+    volume: 1, onload: () => {
+        console.log("Sound loaded");
+    }
+});
 const currentRound = ref(-1);
 const currentState = ref<'start' | 'randomizing' | 'revealed-hint' | 'selecting' | 'revealed-solution'>('start');
 const randomPointCenter = ref<number | null>(null);
@@ -26,77 +32,44 @@ const arrowX = computed(() => 500 + Math.cos(arrowAngleRad.value) * arrowLength)
 const arrowY = computed(() => 500 + Math.sin(arrowAngleRad.value) * arrowLength);
 
 const waves: Wave[] = [
-    {category: 'Allgemein', left: "Strahlend (hell leuchtend)", right: "Schattenhaft (in Dunkel gehüllt)"},
-    {
-        category: 'Allgemein',
-        left: "Spritzig (voll Geschmack und Energie)",
-        right: "Geschmacklos (eintönig wie abgestandenes Wasser)"
-    },
-    {category: 'Allgemein', left: "Schaumig (leicht und sprudelnd)", right: "Zähflüssig (dick und träge)"},
-    {category: 'Allgemein', left: "Körnig (rau und robust)", right: "Blitzsauber (makellos und glänzend)"},
-    {
-        category: 'Allgemein',
-        left: "Spontan (unvorhersehbar und spaßig)",
-        right: "Akribisch (ganz genau und sorgfältig)"
-    },
-    {category: 'Allgemein', left: "Verspielt (fantasievoll)", right: "Stoisch (unerschütterlich ernst)"},
-    {category: 'Allgemein', left: "Elektrisierend (vor Energie summend)", right: "Lethargisch (schneckentempo)"},
-    {category: 'Allgemein', left: "Hypnotisch (faszinierend und geschmeidig)", right: "Schockierend (stoßend und rau)"},
-    {category: 'Allgemein', left: "Sprudelnd (lebhaft und beschwingt)", right: "Stagnierend (stillstehend und leblos)"},
-    {category: 'Allgemein', left: "Skurril (liebenswert eigenartig)", right: "Alltäglich (langweilig normal)"},
-
-    {category: 'Pop Culture', left: "Harry Potter (Held)", right: "Voldemort (Schurke)"},
-    {category: 'Pop Culture', left: "Superman (Held)", right: "Lex Luthor (Schurke)"},
-    {category: 'Pop Culture', left: "Gryffindor (Hogwarts-Haus)", right: "Slytherin (Hogwarts-Haus)"},
-    {category: 'Pop Culture', left: "Batman (Held)", right: "Joker (Schurke)"},
-    {category: 'Pop Culture', left: "Sherlock Holmes (Detektiv)", right: "Moriarty (kriminelles Genie)"},
-    {category: 'Pop Culture', left: "Mario (Held)", right: "Bowser (Bösewicht)"},
-
-    {
-        category: 'Brettspiele',
-        left: "Knifflige Strategie (geistig anstrengend)",
-        right: "Party-Chaos (wild und unvorhersehbar)"
-    },
-    {
-        category: 'Brettspiele',
-        left: "Kooperative Teamarbeit (zusammenarbeiten)",
-        right: "Kompetitiver Wahnsinn (jeder für sich)"
-    },
-    {category: 'Brettspiele', left: "Schnellspiel (kurz und intensiv)", right: "Epischer Marathon (lange Partie)"},
-    {category: 'Brettspiele', left: "Würfeln (dem Glück überlassen)", right: "Karten-Draft (perfekte Hand planen)"},
-    {
-        category: 'Brettspiele',
-        left: "Abstraktes Rätselspiel (reine Strategie)",
-        right: "Storygetriebenes Epos (fesselnde Erzählung)"
-    },
-    {
-        category: 'Brettspiele',
-        left: "Stilles Deduktionsspiel (leise Rätsel lösen)",
-        right: "Laute Bluff-Session (frech vortäuschen)"
-    },
-    {
-        category: 'Brettspiele',
-        left: "Minimalistische Eleganz (schlicht und einfach)",
-        right: "Übertriebene Deluxe-Version (mit allem Drum und Dran)"
-    },
-    {
-        category: 'Brettspiele',
-        left: "Old-School-Klassiker (zeitlose Tradition)",
-        right: "Hochmoderne Innovation (frisch und neu)"
-    },
-    {
-        category: 'Brettspiele',
-        left: "Kachelplatzierung (baue deine Welt)",
-        right: "Gebietskontrolle (herrsche über die Karte)"
-    },
-    {
-        category: 'Brettspiele',
-        left: "Solo-Herausforderung (allein gegen das Spiel)",
-        right: "Soziales Duell (alle gegeneinander)"
-    },
+    // 1
+    {category: 'Allgemein', left: "Weich", right: "Hart"},
+    {category: 'Allgemein', left: "Hell", right: "Dunkel"},
+    // 2
+    {category: 'Pop Culture', left: "Gryffindor", right: "Slytherin"},
+    {category: 'Pop Culture', left: "Batman", right: "Joker"},
+    // 3
+    {category: 'Allgemein', left: "Schnell", right: "Langsam"},
+    {category: 'Allgemein', left: "Leicht", right: "Schwer"},
+    // 4
+    {category: 'Berühmte Personen', left: "Gandhi", right: "Hitler"},
+    {category: 'Berühmte Personen', left: "Mutter Teresa", right: "Genghis Khan"},
+    // 5
+    {category: 'Allgemein', left: "Skurril", right: "Alltäglich"},
+    {category: 'Allgemein', left: "Glänzend", right: "Matt"},
+    // 6
+    {category: 'Essen & Trinken', left: "Pizza", right: "Sushi"},
+    {category: 'Essen & Trinken', left: "Kaffee", right: "Tee"},
+    // 7
+    {category: 'Allgemein', left: "Glatt", right: "Rau"},
+    {category: 'Allgemein', left: "Warm", right: "Kalt"},
+    // 8
+    {category: 'Tiere', left: "Vogel", right: "Fisch"},
+    {category: 'Tiere', left: "Hund", right: "Katze"},
+    // 9
+    {category: 'Allgemein', left: "Frisch", right: "Alt"},
+    {category: 'Allgemein', left: "Saftig", right: "Trocken"},
+    // 10
+    {category: 'Haushalt', left: "Besen", right: "Staubsauger"},
+    {category: 'Haushalt', left: "Nützliches Gerät", right: "Dekorationsobjekt"},
+    // 11
+    {category: 'Allgemein', left: "Süß", right: "Bitter"},
+    {category: 'Allgemein', left: "Leise", right: "Laut"},
 ];
 
 function startRandomizeAnimation() {
+    play();
+
     const startTime = performance.now();
     const startDeg = (arrowAngle.value + 360) % 360;
     const endDeg = randomPointCenterDegree.value ?? (180 + Math.random() * 180);
@@ -119,6 +92,7 @@ function startRandomizeAnimation() {
             arrowAngle.value = endDeg % 360;
             currentState.value = 'revealed-hint';
             randomizeRaf = null;
+            stop();
         }
     }
 
@@ -158,7 +132,8 @@ function shuffle(array: any[], seed: number) {
 }
 
 const randomWaves = computed(() => {
-    return shuffle(waves.slice(), seed);
+    return waves;
+    // return shuffle(waves.slice(), seed);
 });
 
 const currentCategory = computed(() => {
