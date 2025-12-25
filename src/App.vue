@@ -316,9 +316,9 @@ const hintSlices = computed(() => {
 
     // colors: outer, inner, center
     const colorMap: Record<number, string> = {
-        0: "#ff4d4f",   // center (strong)
-        1: "#ffa940",   // immediate neighbors (warm)
-        2: "#ffd666"    // outer neighbors (light)
+        0: "#617A8B",
+        1: "#CC5045",
+        2: "#D7A648"
     };
 
     return offsets.map((off) => {
@@ -394,7 +394,6 @@ const hintSlices = computed(() => {
                         :key="i"
                         :d="arcPath(500, 500, sliceRadius, s.start, s.end)"
                         :fill="s.color"
-                        opacity="0.85"
                     />
                 </g>
 
@@ -422,7 +421,7 @@ const hintSlices = computed(() => {
                          :class="{'text-gray-300': selectedNumber === null || currentState === 'revealed-solution'}"></div>
                     <div v-if="currentState === 'revealed-solution'">
                         <p class="text-3xl">Lösung: {{ randomPointCenter }}</p>
-                        <p class="text-7xl">{{ Math.max(0, 3 - Math.abs(randomPointCenter - selectedNumber)) }}
+                        <p class="text-7xl">{{ Math.max(0, 4 - Math.abs(randomPointCenter - selectedNumber)) }}
                             Punkte</p>
                     </div>
                 </div>
