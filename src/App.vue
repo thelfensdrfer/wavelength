@@ -160,27 +160,17 @@ const wordRight = computed(() => {
     return randomWaves.value[currentRound.value].right;
 });
 
-const selectedNumber = computed(() => {
-    if (selectedValue.value === null) {
-        return null;
-    }
+// The value is between 0.5 (100% left) and 1 (100% right), map it to pointsMin..pointsMax
+const valueToNumber = (value: number | null) =>
+    value === null ? null : Math.round(pointsMin + (value - 0.5) / 0.5 * (pointsMax - pointsMin));
 
-    // The selected value is between 0.5 (100% left) and 1 (100% right), map it to a number between 1 and 25 (number of circles)
-    const minValue = 0.5;
-    const maxValue = 1;
+const selectedNumber = computed(() => valueToNumber(selectedValue.value));
+const hoverNumber = computed(() => valueToNumber(hoverValue.value));
 
-    return Math.round(1 + (selectedValue.value - minValue) * (pointsMax - maxValue) / (pointsMin - minValue))
-});
-
-const hoverNumber = computed(() => {
-    if (hoverValue.value === null) {
-        return null;
-    }
-
-    const minValue = 0.5;
-    const maxValue = 1;
-
-    return Math.round(1 + (hoverValue.value - minValue) * (pointsMax - maxValue) / (pointsMin - minValue))
+// 4/3/2 points for the center/inner/outer slice, 0 outside the drawn slices
+const score = computed(() => {
+    const distance = Math.abs(randomPointCenter.value - selectedNumber.value);
+    return distance <= 2 ? 4 - distance : 0;
 });
 
 const reveal = () => {
@@ -204,11 +194,10 @@ const arrowMove = (event: MouseEvent) => {
 
     const dx = cursorPosition.x - 500;
     const dy = cursorPosition.y - 500;
-    const angleRad = Math.atan2(dy, dx);
-    arrowAngle.value = angleRad * 180 / Math.PI;
-
-    const angle = (arrowAngle.value + 360) % 360;
-    hoverValue.value = angle / 360;
+    const deg = Math.atan2(dy, dx) * 180 / Math.PI;
+    // Clamp to the dial (180..360); at/below the pivot line atan2 returns >= 0, which would map to a negative number
+    arrowAngle.value = deg < 0 ? deg + 360 : (deg > 90 ? 180 : 360);
+    hoverValue.value = arrowAngle.value / 360;
 }
 
 const arrowSelect = () => {
@@ -221,22 +210,29 @@ const arrowSelect = () => {
         return;
     }
 
-    const angle = (arrowAngle.value + 360) % 360;
-    selectedValue.value = angle / 360;
+    selectedValue.value = arrowAngle.value / 360;
 };
 
 const skip = () => {
-    initNextRound();
+    randomizePoints();
 };
 
 const clickDial = () => {
     if (currentState.value === 'randomizing') {
+        // Cancel the spin, otherwise it later forces the state back to 'revealed-hint'
+        if (randomizeRaf) {
+            cancelAnimationFrame(randomizeRaf);
+            randomizeRaf = null;
+        }
+        stop();
         currentState.value = 'revealed-hint';
         return;
     }
 
     if (currentState.value === 'revealed-hint') {
         currentState.value = 'selecting';
+        // The arrow still points at the target after the spin; center it so it doesn't give away the solution
+        arrowAngle.value = 270;
         return;
     }
 
@@ -249,7 +245,7 @@ const clickDial = () => {
 const initNextRound = () => {
     if (currentRound.value + 1 >= randomWaves.value.length) {
         alert("Keine weiteren Begriffe mehr übrig!");
-        return;
+        return false;
     }
 
     currentRound.value += 1;
@@ -257,16 +253,19 @@ const initNextRound = () => {
     selectedValue.value = null;
     hoverValue.value = null;
     arrowAngle.value = 0;
+    return true;
 };
 
 /**
  * Select a random integer between pointsMin and pointsMax.
  */
 const randomizePoints = () => {
-    randomPointCenter.value = Math.floor(Math.random() * (pointsMax - pointsMin + 1)) + pointsMin;
+    // Reset game states; stop if the word list is exhausted
+    if (!initNextRound()) {
+        return;
+    }
 
-    // Reset game states
-    initNextRound();
+    randomPointCenter.value = Math.floor(Math.random() * (pointsMax - pointsMin + 1)) + pointsMin;
     startRandomizeAnimation();
 }
 
@@ -275,11 +274,11 @@ const randomPointCenterDegree = computed(() => {
         return null;
     }
 
-    return 180 + ((randomPointCenter.value - 1) / (pointsMax - 1)) * 180;
+    return 180 + ((randomPointCenter.value - pointsMin) / (pointsMax - pointsMin)) * 180;
 });
 
 const sliceWidthDeg = computed(() => {
-    return 180 / (pointsMax - 1);
+    return 180 / (pointsMax - pointsMin);
 });
 
 function polarToCartesian(cx: number, cy: number, radius: number, angleDeg: number) {
@@ -421,7 +420,7 @@ const hintSlices = computed(() => {
                          :class="{'text-gray-300': selectedNumber === null || currentState === 'revealed-solution'}"></div>
                     <div v-if="currentState === 'revealed-solution'">
                         <p class="text-3xl">Lösung: {{ randomPointCenter }}</p>
-                        <p class="text-7xl">{{ Math.max(0, 4 - Math.abs(randomPointCenter - selectedNumber)) }}
+                        <p class="text-7xl">{{ score }}
                             Punkte</p>
                     </div>
                 </div>
