@@ -8,8 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run dev` — Vite dev server with HMR (Vue DevTools plugin enabled)
 - `npm run build` — production build to `dist/`
 - `npm run preview` — serve the production build
+- `npm test` — Vitest (jsdom) smoke tests in `src/App.test.js`; CI runs tests + build via `.github/workflows/ci.yml`
 
-There is no test suite, linter, or formatter configured. `App.vue` uses `<script lang="ts">`, but `typescript`/`vue-tsc` are not installed: Vite only strips the types and never checks them, so type errors won't break the build. Verify changes by running the app.
+There is no linter or formatter configured. `App.vue` uses `<script lang="ts">`, but `typescript`/`vue-tsc` are not installed: Vite only strips the types and never checks them, so type errors won't break the build. Verify changes by running the app.
 
 ## What this is
 
